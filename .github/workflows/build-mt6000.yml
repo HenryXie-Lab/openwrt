@@ -1,0 +1,63 @@
+name: Build GL-MT6000 OpenWrt
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-22.04
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+        build-essential \
+        clang \
+        flex \
+        bison \
+        g++ \
+        gawk \
+        gettext \
+        git \
+        libncurses-dev \
+        libssl-dev \
+        python3 \
+        rsync \
+        unzip \
+        zlib1g-dev
+
+
+    - name: Update feeds
+      run: |
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+
+    - name: Prepare config
+      run: |
+        cp configs/mt6000.config .config
+        make defconfig
+
+
+    - name: Download
+      run: |
+        make download -j8
+
+
+    - name: Compile
+      run: |
+        make -j$(nproc)
+
+
+    - name: Upload firmware
+      uses: actions/upload-artifact@v4
+      with:
+        name: gl-mt6000-firmware
+        path: bin/targets/mediatek/filogic/*.bin
